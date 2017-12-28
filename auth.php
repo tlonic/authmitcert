@@ -122,20 +122,20 @@ class auth_plugin_authmitcert extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    // Redirect for login
-    public function logIn() {
-        error_log('authmitcert : redirect user for login to '.$this->conf['loginURL']);
-        header('Location: '.str_replace('{target}', wl(getId()), $this->conf['loginURL']));
-        exit;
-    }
-    
-    // Redirect for logout
-    public function logOff($ignore = true) {
-        if($ignore) return;
-        auth_logoff();
-        error_log('authmitcert : authenticated user redirected for logout to '.$this->conf['logoutURL']);
-        header('Location: '.str_replace('{target}', $_SERVER['HTTP_REFERER'], $this->conf['logoutURL']));
-        exit;
-    }
-     */
+    * // Redirect for login
+    * public function logIn() {
+    *     error_log('authmitcert : redirect user for login to '.$this->conf['loginURL']);
+    *     header('Location: '.str_replace('{target}', wl(getId()), $this->conf['loginURL']));
+    *     exit;
+    * } 
+    *
+    * // Redirect for logout
+    * public function logOff($ignore = true) {
+    *     if($ignore) return;
+    *     auth_logoff();
+    *     error_log('authmitcert : authenticated user redirected for logout to '.$this->conf['logoutURL']);
+    *     header('Location: '.str_replace('{target}', $_SERVER['HTTP_REFERER'], $this->conf['logoutURL']));
+    *     exit;
+    * }
+    */
 }
