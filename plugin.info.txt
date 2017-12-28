@@ -1,7 +1,7 @@
-base   genericsso
-author Etienne MELEARD
-email  etienne.meleard@renater.fr
-date   2014-09-10
-name   Generic SSO plugin
-desc   Allows to authenticate against any SSO that set environment variables
-url    http://www.dokuwiki.org/plugin:genericsso
+base   authmitcert
+author Yadav Gowda
+email  ysg@mit.edu
+date   2017-12-28
+name   MIT Certificate Auth
+desc   Authentication backend using MIT certificates
+url    https://github.com/tlonic/authmitcert

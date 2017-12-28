@@ -3,15 +3,12 @@
 if(!defined('DOKU_INC')) die();
 
 /**
- * Authentication backend using generic SSO
+ * Authentication backend using MIT certificates
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author     Dominique Launay <dominique.launay AT cru.fr>
- * @author     Olivier Salaun <olivier.salaun AT cru.fr>
- * @author     Yoann Lecuyer <yoann.lecuyer AT cru.fr> 
- * @author     Etienne Meleard <etienne.meleard AT renater.fr> 
+ * @author     Yadav Gowda <ysg AT mit.edu>
  **/
 
-class auth_plugin_genericsso extends DokuWiki_Auth_Plugin {
+class auth_plugin_authmitcert extends DokuWiki_Auth_Plugin {
     private $users = array();
     
     public function __construct() {
@@ -25,17 +22,14 @@ class auth_plugin_genericsso extends DokuWiki_Auth_Plugin {
         
         // check if the server configuration has correctly been done
         $missing_conf = array();
-        foreach(array('emailAttribute', 'loginURL', 'logoutURL') as $k)
+        foreach(array('emailAttribute') as $k)
             if(!array_key_exists($k, $this->conf) || !$this->conf[$k])
                 $missing_conf[] = $k;
         
         if($missing_conf) {
-            msg('Your genericsso configuration is not fully set, missing parameters : '.implode(', ', $missing_conf), -1, '', '', MSG_ADMINS_ONLY);
+            msg('Your authmitcert configuration is not fully set, missing parameters : '.implode(', ', $missing_conf), -1, '', '', MSG_ADMINS_ONLY);
             return;
         }
-        
-        if(!array_key_exists('alwaysCheck', $this->conf))
-            $this->conf['alwaysCheck'] = false;
         
         $this->success = true;
     }
@@ -49,7 +43,7 @@ class auth_plugin_genericsso extends DokuWiki_Auth_Plugin {
     public function getUserData($user) {
         if(is_null($this->users)) $this->loadUsers();
         if(array_key_exists($user, $this->users)) return $this->users[$user]; // Cache
-        $this->users[$user] = array('name' => $user, 'mail' => $user, 'grps' => array());
+        $this->users[$user] = array('name' => $user, 'mail' => $user . '@mit.edu', 'grps' => array());
         return $this->users[$user];
     }
     
@@ -66,11 +60,11 @@ class auth_plugin_genericsso extends DokuWiki_Auth_Plugin {
         global $conf;
         
         $do = array_key_exists('do', $_REQUEST) ? $_REQUEST['do'] : null;
-        $user = $this->getSSOEMail();
+        $user = $this->getUser();
         
         //Got a session already ?
         if($this->hasSession()) {
-            if($this->conf['alwaysCheck'] && !$user) {
+            if(!$user) {
                 auth_logoff();
                 return false;
             }
@@ -82,11 +76,11 @@ class auth_plugin_genericsso extends DokuWiki_Auth_Plugin {
                 
                 $data = $this->getUserData($user);
                 $this->setSession($user, $data['grps'], $data['mail'], $data['name']);
-                error_log('genericsso : authenticated user');
+                error_log('authmitcert : authenticated user');
                 return true;
             }else{
                 if($do == 'login') $this->logIn();
-                //error_log('genericsso : no email address to log in');
+                //error_log('authmitcert : no email address to log in');
                 auth_logoff();
                 return false;
             }
@@ -115,17 +109,22 @@ class auth_plugin_genericsso extends DokuWiki_Auth_Plugin {
         return $_SESSION[DOKU_COOKIE];
     }
     
-    // Get EMail from Shib env
-    private function getSSOEMail() {
+    // Get user from SSL env
+    private function getUser() {
         if(!array_key_exists($this->conf['emailAttribute'], $_SERVER)) return null;
         $mail = $_SERVER[$this->conf['emailAttribute']];
         if(!$mail || !mail_isvalid($mail)) return null;
-        return $mail;
+        $email_array = explode("@", $mail);
+        // check to ensure email in cert is MIT.EDU domain
+        if (strcasecmp(end($email_array), 'MIT.EDU') != 0) return null;
+        $user = array_shift($email_array);
+        return $user;
     }
-    
+
+    /**
     // Redirect for login
     public function logIn() {
-        error_log('genericsso : redirect user for login to '.$this->conf['loginURL']);
+        error_log('authmitcert : redirect user for login to '.$this->conf['loginURL']);
         header('Location: '.str_replace('{target}', wl(getId()), $this->conf['loginURL']));
         exit;
     }
@@ -134,27 +133,9 @@ class auth_plugin_genericsso extends DokuWiki_Auth_Plugin {
     public function logOff($ignore = true) {
         if($ignore) return;
         auth_logoff();
-        error_log('genericsso : authenticated user redirected for logout to '.$this->conf['logoutURL']);
+        error_log('authmitcert : authenticated user redirected for logout to '.$this->conf['logoutURL']);
         header('Location: '.str_replace('{target}', $_SERVER['HTTP_REFERER'], $this->conf['logoutURL']));
         exit;
     }
-    
-    /**
-    * Load local user data
-    */
-    private function loadUsers(){
-        $this->users = array();
-        if(!@file_exists(DOKU_CONF.'users.auth.php')) return;
-        foreach(file(DOKU_CONF.'users.auth.php') as $line){
-            $line = trim(preg_replace('/#.*$/', '', $line)); //ignore comments
-            if(!$line) continue;
-            $row = split(':', $line,5);
-            $this->users[$row[0]] = array(
-                'pass' => $row[1],
-                'name' => urldecode($row[2]),
-                'mail' => $row[3],
-                'grps' => split(',', $row[4])
-            );
-        }
-    }
+     */
 }
