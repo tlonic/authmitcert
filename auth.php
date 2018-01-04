@@ -17,6 +17,7 @@ class auth_plugin_authmitcert extends DokuWiki_Auth_Plugin {
         $this->loadConfig();
         
         $this->cando['external'] = true;
+        $this->cando['logout'] = false;
         $this->success = false;
         
         // check if the server configuration has correctly been done
